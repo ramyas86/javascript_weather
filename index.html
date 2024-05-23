@@ -1,29 +1,93 @@
 <!DOCTYPE html>
-
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="utf-8">
-    <title>All Courses Page</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
-        
+   <title>Weather</title>
 </head>
-<body>
-    <h3 class="m-3">Weather forecast</h3>
-    <div class="dropdown m-3">
-        <select id="selectCity" onchange="cityChange(this.value)">
-            <option value="">Select a city</option>
-        </select>        
-    </div>
-    <pre id="msgArea"></pre>
-    
-</body>
 
- <script src="index.js"></script>
+<body>
+   <h3>Weather Forecast</h3>
+   <p>Select a city: <select id="citiesDDL"></select></p>
+   <table id="weatherTbl">
+   </table>
+
+   <script>
+      let cities = [
+         { name: "Benbrook, TX", latitude: 32.6732, longitude: -97.4606 },
+         { name: "Denver, CO", latitude: 39.712179, longitude: -104.973050 },
+         { name: "Portland, OR", latitude: 45.520117, longitude: -122.676683 },
+         { name: "Portland, ME", latitude: 43.662093, longitude: -70.260251 }
+      ];
+
+      window.onload = function () {
+         let citiesDDL = document.getElementById("citiesDDL");
+
+         for (let i = 0; i < cities.length; i++) {
+            let opt = document.createElement("option");
+            opt.text = cities[i].name;
+            citiesDDL.appendChild(opt);
+         }
+
+         citiesDDL.onchange = onCitiesDDLChanged;
+
+         onCitiesDDLChanged();
+      }
+
+      async function onCitiesDDLChanged() {
+         // Find the table and clear it
+         let table = document.getElementById("weatherTbl");
+         table.innerHTML = "";
+
+         // Find the city and get the lat and long
+         let citiesDDL = document.getElementById("citiesDDL");
+         let selectedCity = cities.find(city => city.name == citiesDDL.value);
+
+         let stationLookupUrl = `https://api.weather.gov/points/${selectedCity.latitude},${selectedCity.longitude}`;
+
+         try {
+            let response = await fetch(stationLookupUrl);
+            let data = await response.json();
+            let weatherUrl = data.properties.forecast;
+            await getWeather(weatherUrl);
+         } catch (error) {
+            console.error("Error fetching station lookup data:", error);
+         }
+      }
+
+      async function getWeather(weatherUrl) {
+         try {
+            let response = await fetch(weatherUrl);
+            let data = await response.json();
+            let forecastArray = data.properties.periods;
+            displayWeather(forecastArray);
+         } catch (error) {
+            console.error("Error fetching weather data:", error);
+         }
+      }
+
+      function displayWeather(forecastArray) {
+         let table = document.getElementById("weatherTbl");
+
+         // loop through the array
+         let forecastArrayLength = forecastArray.length;
+         for (let i = 0; i < forecastArrayLength; i++) {
+
+            let row = table.insertRow(-1);
+
+            let cell1 = row.insertCell(0);
+            cell1.innerHTML = forecastArray[i].name;
+
+            let cell2 = row.insertCell(1);
+            cell2.innerHTML = "Temperature " + forecastArray[i].temperature + " " + forecastArray[i].temperatureUnit;
+
+            let cell3 = row.insertCell(2);
+            cell3.innerHTML = "Winds " + forecastArray[i].windDirection + " " + forecastArray[i].windSpeed;
+
+            let cell4 = row.insertCell(3);
+            cell4.innerHTML = forecastArray[i].shortForecast;
+         }
+      }
+   </script>
+</body>
 
 </html>
